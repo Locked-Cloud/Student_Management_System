@@ -2,13 +2,25 @@ StudentManagementSystem/
 │
 ├── main.cpp                                // Contains the main function and program flow
 │
+├── User.h                                  // Header file for the User structure (Admin, Teacher, Student)
+│
+├── User.cpp                                // Implementation file for User-related functions
+│
+├── Admin.h                                 // Header file for the Admin class
+│
+├── Admin.cpp                               // Implementation file for Admin-related functions
+│
+├── Teacher.h                               // Header file for the Teacher class
+│
+├── Teacher.cpp                             // Implementation file for Teacher-related functions
+│
 ├── Student.h                               // Header file for the Student structure
 │
 ├── Student.cpp                             // Implementation file for Student-related functions
 │   ├── encryptStudentData()                // Encrypts student data before saving it
 │   └── decryptStudentData()                // Decrypts student data when loading it
 │
-├── StudentManagementSystem.h               // Header file for the system functions
+├── StudentManagementSystem.h               // Header file for system functions
 │
 ├── StudentManagementSystem.cpp             // Implementation file for system functions
 │   ├── addStudent()                       // Adds a new student to the system
@@ -26,4 +38,6 @@ StudentManagementSystem/
 │
 └── data/
     ├── students.csv                       // Stores encrypted student data
-    └── backup.csv                         // Stores backup data
+    ├── backup.csv                         // Stores backup data
+    ├── users.csv                          // Stores user data (Admin, Teacher, Student)
+    └── grades.csv                         // Stores student grades for GPA calculation
