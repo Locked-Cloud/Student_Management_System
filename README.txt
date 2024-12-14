@@ -5,6 +5,8 @@ StudentManagementSystem/
 ├── Student.h                               // Header file for the Student structure
 │
 ├── Student.cpp                             // Implementation file for Student-related functions
+│   ├── encryptStudentData()                // Encrypts student data before saving it
+│   └── decryptStudentData()                // Decrypts student data when loading it
 │
 ├── StudentManagementSystem.h               // Header file for the system functions
 │
