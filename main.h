@@ -86,6 +86,7 @@ void loadTeachers(Teacher*& head, const string& filename);
 void displayStudentManagementMenu();
 void initializeDefaultTeachers();
 string trim(const string& str);
+void sortStudents(Student*& head) ;
 
 
 #endif
