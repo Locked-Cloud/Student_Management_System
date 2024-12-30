@@ -138,6 +138,48 @@ void displayStudentMenu() {
     cout << "3. View My Grades\n";
     cout << "4. Exit\n";
 }
+void sortStudents(Student*& head) {
+    int sortChoice;
+    cout << "Sort by:\n1. Name\n2. GPA\n3. ID\n4. Age\nEnter choice: ";
+    cin >> sortChoice;
+
+    // Validate input
+    while (cin.fail() || sortChoice < 1 || sortChoice > 4) {
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        cout << "Invalid input. Please enter a number between 1 and 4.\n";
+        cin >> sortChoice;
+    }
+
+    bool ascending;
+    cout << "Sort in ascending order (1 for Yes, 0 for No): ";
+    cin >> ascending;
+
+    switch (sortChoice) {
+        case 1:
+            sortStudentsByName(head, ascending);
+            break;
+        case 2:
+            sortStudentsByGPA(head, ascending);
+            break;
+        case 3:
+            sortStudentsByID(head, ascending);
+            break;
+        case 4:
+            sortStudentsByAge(head, ascending);
+            break;
+        default:
+            cout << "Invalid choice.\n";
+            return;
+    }
+
+    cout << "Students sorted successfully.\n";
+
+    if (autoSaveEnabled) {
+        saveToFile(head, "students.csv");
+        cout << "Student list saved to file.\n";
+    }
+}
 
 // Handle Admin Actions
 void handleAdminActions(Student*& head) {
@@ -243,14 +285,23 @@ void handleAdminActions(Student*& head) {
                             cin >> ascending;
 
                             switch (sortChoice) {
-                                case 1: sortStudentsByName(head, ascending); break;
-                                case 2: sortStudentsByGPA(head, ascending); break;
-                                case 3: sortStudentsByID(head, ascending); break;
-                                case 4: sortStudentsByAge(head, ascending); break;
-                                default: cout << "Invalid choice.\n"; break;
+                                case 1: 
+                                    sortStudentsByName(head, ascending); 
+                                    break;
+                                case 2: 
+                                    sortStudentsByGPA(head, ascending); 
+                                    break;
+                                case 3: 
+                                    sortStudentsByID(head, ascending); 
+                                    break;
+                                case 4: 
+                                    sortStudentsByAge(head, ascending); 
+                                    break;
+                                default: 
+                                    cout << "Invalid choice.\n"; 
+                                    break;
                             }
 
-                            // Auto-save after sorting
                             if (autoSaveEnabled) {
                                 saveToFile(head, "students.csv"); // Auto-save if enabled
                                 cout << "Student list sorted and saved to file.\n";
@@ -361,7 +412,50 @@ void handleAdminActions(Student*& head) {
                 }
                 break;
             }
-            case 4: // Exit
+            case 4: { // Sort Students
+                sortStudents(head);
+                break;
+            }
+            case 5: // filter students
+                int filterChoice;
+                cout << "Filter by:\n1. GPA range\n2. Age range\nEnter choice: ";
+                cin >> filterChoice;
+                float minGPA, maxGPA;
+                int minAge, maxAge;
+                switch (filterChoice) {
+                    case 1: // Filter by GPA range
+                        cout << "Enter minimum GPA: ";
+                        cin >> minGPA;
+                        cout << "Enter maximum GPA: ";
+                        cin >> maxGPA;
+                        filterStudentsByGPA(head, minGPA, maxGPA);
+                        break;
+                    case 2: // Filter by Age range
+                        cout << "Enter minimum Age: ";
+                        cin >> minAge;
+                        cout << "Enter maximum Age: ";
+                        cin >> maxAge;
+                        filterStudentsByAge(head, minAge, maxAge);
+                        break;
+                    default:
+                        cout << "Invalid choice.\n";
+                        break;
+                }
+                
+                break;
+            case 6: // generate test cases
+                int count;
+                cout << "Enter number of test cases to generate: ";
+                cin >> count;
+                generateTestCases(head, count);
+                break;
+            case 7: // save to file
+                saveToFile(head, "students.csv");
+                break;
+            case 8: // load from file
+                loadFromFile(head, "students.csv");
+                break;
+            case 9: // exit
                 cout << "Exiting...\n";
                 return;
             default:
@@ -820,16 +914,13 @@ void displayStudents(Student* head) {
 // Sort by Name
 void sortStudentsByName(Student*& head, bool ascending) {
     if (!head || !head->next) return;
-    for (Student* i = head; i; i = i->next) {
+    Student* temp = nullptr;
+    for (Student* i = head; i && i->next; i = i->next) {
         for (Student* j = i->next; j; j = j->next) {
             if ((ascending && i->name > j->name) || (!ascending && i->name < j->name)) {
-                swap(i->id, j->id);
-                swap(i->name, j->name);
-                swap(i->age, j->age);
-                swap(i->gpa, j->gpa);
-                swap(i->email, j->email);
-                swap(i->department, j->department);
-                swap(i->yearOfStudy, j->yearOfStudy);
+                temp = i;
+                i = j;
+                j = temp;
             }
         }
     }
@@ -838,16 +929,13 @@ void sortStudentsByName(Student*& head, bool ascending) {
 // Sort by GPA
 void sortStudentsByGPA(Student*& head, bool ascending) {
     if (!head || !head->next) return;
-    for (Student* i = head; i; i = i->next) {
+    Student* temp = nullptr;
+    for (Student* i = head; i && i->next; i = i->next) {
         for (Student* j = i->next; j; j = j->next) {
             if ((ascending && i->gpa > j->gpa) || (!ascending && i->gpa < j->gpa)) {
-                swap(i->id, j->id);
-                swap(i->name, j->name);
-                swap(i->age, j->age);
-                swap(i->gpa, j->gpa);
-                swap(i->email, j->email);
-                swap(i->department, j->department);
-                swap(i->yearOfStudy, j->yearOfStudy);
+                temp = i;
+                i = j;
+                j = temp;
             }
         }
     }
@@ -856,16 +944,13 @@ void sortStudentsByGPA(Student*& head, bool ascending) {
 // Sort by ID
 void sortStudentsByID(Student*& head, bool ascending) {
     if (!head || !head->next) return;
-    for (Student* i = head; i; i = i->next) {
+    Student* temp = nullptr;
+    for (Student* i = head; i && i->next; i = i->next) {
         for (Student* j = i->next; j; j = j->next) {
             if ((ascending && i->id > j->id) || (!ascending && i->id < j->id)) {
-                swap(i->id, j->id);
-                swap(i->name, j->name);
-                swap(i->age, j->age);
-                swap(i->gpa, j->gpa);
-                swap(i->email, j->email);
-                swap(i->department, j->department);
-                swap(i->yearOfStudy, j->yearOfStudy);
+                temp = i;
+                i = j;
+                j = temp;
             }
         }
     }
@@ -874,16 +959,13 @@ void sortStudentsByID(Student*& head, bool ascending) {
 // Sort by Age
 void sortStudentsByAge(Student*& head, bool ascending) {
     if (!head || !head->next) return;
-    for (Student* i = head; i; i = i->next) {
+    Student* temp = nullptr;
+    for (Student* i = head; i && i->next; i = i->next) {
         for (Student* j = i->next; j; j = j->next) {
             if ((ascending && i->age > j->age) || (!ascending && i->age < j->age)) {
-                swap(i->id, j->id);
-                swap(i->name, j->name);
-                swap(i->age, j->age);
-                swap(i->gpa, j->gpa);
-                swap(i->email, j->email);
-                swap(i->department, j->department);
-                swap(i->yearOfStudy, j->yearOfStudy);
+                temp = i;
+                i = j;
+                j = temp;
             }
         }
     }
@@ -1240,4 +1322,3 @@ void displayStudentManagementMenu() {
     cout << "9. Generate Test Cases\n";
     cout << "10. Back to Main Menu\n";
 }
-
