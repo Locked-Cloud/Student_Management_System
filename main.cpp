@@ -5,6 +5,7 @@ bool autoSaveEnabled = true; // Default to enabled
 
 int main() {
     Student* head = nullptr;
+    Teacher* teacherHead = nullptr;
     User currentUser;
     int choice;
     char loadChoice;
@@ -22,6 +23,7 @@ int main() {
 
     if (tolower(loadChoice) == 'y') {
         loadFromFile(head, "students.csv");
+        loadTeachers(teacherHead, "teachers.csv");
         cout << "Previous data loaded successfully!\n";
     }
 
@@ -139,6 +141,11 @@ void displayStudentMenu() {
     cout << "4. Exit\n";
 }
 void sortStudents(Student*& head) {
+    if (!head) {
+        cout << "No students to sort.\n";
+        return;
+    }
+
     int sortChoice;
     cout << "Sort by:\n1. Name\n2. GPA\n3. ID\n4. Age\nEnter choice: ";
     cin >> sortChoice;
@@ -158,20 +165,29 @@ void sortStudents(Student*& head) {
     switch (sortChoice) {
         case 1:
             sortStudentsByName(head, ascending);
+            cout << "\nSorted by Name (" << (ascending ? "Ascending" : "Descending") << "):\n";
             break;
         case 2:
             sortStudentsByGPA(head, ascending);
+            cout << "\nSorted by GPA (" << (ascending ? "Ascending" : "Descending") << "):\n";
             break;
         case 3:
             sortStudentsByID(head, ascending);
+            cout << "\nSorted by ID (" << (ascending ? "Ascending" : "Descending") << "):\n";
             break;
         case 4:
             sortStudentsByAge(head, ascending);
+            cout << "\nSorted by Age (" << (ascending ? "Ascending" : "Descending") << "):\n";
             break;
         default:
             cout << "Invalid choice.\n";
             return;
     }
+
+    cout << "\n=== Sorted Student List ===\n";
+    cout << "----------------------------------------\n";
+    displayStudents(head);  // Display the sorted list
+    cout << "----------------------------------------\n";
 
     cout << "Students sorted successfully.\n";
 
@@ -194,8 +210,8 @@ void handleAdminActions(Student*& head) {
 
         // Validate input
         while (cin.fail() || choice < 1 || choice > 9) {
-            cin.clear(); // Clear the error flag
-            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Discard invalid input
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
             cout << "Invalid input. Please enter a number between 1 and 9.\n";
             cin >> choice;
         }
@@ -462,12 +478,12 @@ void handleAdminActions(Student*& head) {
                 cout << "Invalid choice. Try again.\n";
         }
         
-        if (choice != 4) {
+        if (choice != 9) {
             cout << "\nPress Enter to continue...";
             cin.ignore();
             cin.get();
         }
-    } while (choice != 4);
+    } while (choice != 9);
 }
 
 // Handle Teacher Actions
@@ -570,28 +586,7 @@ void handleTeacherActions(Student*& head) {
                 break;
             }
             case 6: { // Sort Students
-                int sortChoice;
-                cout << "Sort by:\n1. Name\n2. GPA\n3. ID\n4. Age\nEnter choice: ";
-                cin >> sortChoice;
-
-                // Validate input
-                if (cin.fail()) {
-                    cin.clear();
-                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
-                    cout << "Invalid input. Please enter a number.\n";
-                    continue; // Skip to the next iteration of the loop
-                }
-
-                bool ascending;
-                cout << "Sort in ascending order (1 for Yes, 0 for No): ";
-                cin >> ascending;
-                switch (sortChoice) {
-                    case 1: sortStudentsByName(head, ascending); break;
-                    case 2: sortStudentsByGPA(head, ascending); break;
-                    case 3: sortStudentsByID(head, ascending); break;
-                    case 4: sortStudentsByAge(head, ascending); break;
-                    default: cout << "Invalid choice.\n"; break;
-                }
+                sortStudents(head);
                 break;
             }
             case 7: // Save Changes
@@ -1070,6 +1065,10 @@ void deleteAllStudents(Student*& head) {
 
 // Generate Test Cases
 void generateTestCases(Student*& head, int count) {
+    // Store the original list
+    Student* originalHead = head;
+    head = nullptr;
+
     srand(static_cast<unsigned int>(time(0)));
     for (int i = 0; i < count; ++i) {
         Student* newStudent = new Student();
@@ -1085,8 +1084,19 @@ void generateTestCases(Student*& head, int count) {
     }
     cout << count << " test cases generated successfully.\n";
 
-    // Display all generated test cases
-    displayStudents(head); // Call the display function to show all students
+    // Display generated test cases
+    displayStudents(head);
+
+    // Cleanup generated test cases
+    while (head) {
+        Student* temp = head;
+        head = head->next;
+        delete temp;
+    }
+
+    // Restore original list
+    head = originalHead;
+    cout << "Test cases cleaned up. Original list restored.\n";
 }
 
 // Cleanup Memory
