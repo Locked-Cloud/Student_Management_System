@@ -620,15 +620,83 @@ void handleStudentActions(Student* head) {
         cin >> choice;
 
         switch (choice) {
-            case 1: // View My Information
-                // Implement functionality to view student information
+            case 1: { // View My Information
+                Student* student = searchStudentByName(head, studentUsername);
+                if (student) {
+                    cout << "Name: " << student->name << endl;
+                    cout << "Age: " << student->age << endl;
+                    cout << "GPA: " << student->gpa << endl;
+                    cout << "Email: " << student->email << endl;
+                    cout << "Department: " << student->department << endl;
+                    cout << "Year of Study: " << student->yearOfStudy << endl;
+                } else {
+                    cout << "Student not found.\n";
+                }
                 break;
-            case 2: // Update My Information
-                // Implement functionality to update student information
+            }
+            case 2: { // Update My Information
+                Student* student = searchStudentByName(head, studentUsername);
+                if (student) {
+                    cout << "Enter new name (or press Enter to keep current): ";
+                    string newName;
+                    cin.ignore();
+                    getline(cin, newName);
+                    if (!newName.empty()) {
+                        student->name = newName;
+                    }
+
+                    cout << "Enter new age (or press Enter to keep current): ";
+                    string newAgeStr;
+                    cin.ignore();
+                    getline(cin, newAgeStr);
+                    if (!newAgeStr.empty()) {
+                        student->age = stoi(newAgeStr);
+                    }
+
+                    cout << "Enter new GPA (or press Enter to keep current): ";
+                    string newGPAStr;
+                    cin.ignore();
+                    getline(cin, newGPAStr);
+                    if (!newGPAStr.empty()) {
+                        student->gpa = stof(newGPAStr);
+                    }
+
+                    cout << "Enter new email (or press Enter to keep current): ";
+                    string newEmail;
+                    cin.ignore();
+                    getline(cin, newEmail);
+                    if (!newEmail.empty()) {
+                        student->email = newEmail;
+                    }
+
+                    cout << "Enter new department (or press Enter to keep current): ";
+                    string newDepartment;
+                    cin.ignore();
+                    getline(cin, newDepartment);
+                    if (!newDepartment.empty()) {
+                        student->department = newDepartment;
+                    }
+
+                    cout << "Enter new year of study (or press Enter to keep current): ";
+                    string newYearOfStudy;
+                    cin.ignore();
+                    getline(cin, newYearOfStudy);
+                    if (!newYearOfStudy.empty()) {
+                        student->yearOfStudy = newYearOfStudy;
+                    }
+
+                    cout << "Information updated successfully.\n";
+                } else {
+                    cout << "Student not found.\n";
+                }
                 break;
-            case 3: // View My Grades
-                // Implement functionality to view grades
+            }
+            case 3: { // View My Grades
+                // Assuming grades are stored in a separate data structure or file
+                // This is a placeholder for actual grade viewing functionality
+                cout << "Grade viewing functionality is not implemented yet.\n";
                 break;
+            }
             case 4: // Exit
                 cout << "Exiting...\n";
                 return;
