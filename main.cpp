@@ -1,88 +1,7 @@
-#include <iostream>
-#include <string>
-#include <fstream>
-#include <sstream>
-#include <cstdlib>
-#include <ctime>
-#include <algorithm>
-#include <cctype>
-#include <limits>
-#include <vector>
-#ifdef _WIN32
-#include <windows.h>
-#else
-#include <unistd.h>
-#endif
-#include <conio.h>
+#include "main.h"
 
-using namespace std;
-
-struct Student {
-    int id;
-    string name;
-    int age;
-    float gpa;
-    string email;
-    string department;
-    string yearOfStudy;
-    Student* next;
-};
-
-struct User {
-    string username;
-    string password;
-    int userType; // 1 for Admin, 2 for Teacher, 3 for Student
-};
-
-struct Teacher {
-    int id;
-    string name;
-    string email;
-    string department;
-    string password;
-    Teacher* next;
-};
-
-// Function Prototypes
-void addStudent(Student*& head);
-void deleteStudent(Student*& head, int id);
-Student* searchStudentByID(Student* head, int id);
-Student* searchStudentByName(Student* head, const string& name);
-void updateStudent(Student* student);
-void displayStudents(Student* head);
-void sortStudentsByName(Student*& head, bool ascending);
-void sortStudentsByGPA(Student*& head, bool ascending);
-void sortStudentsByID(Student*& head, bool ascending);
-void sortStudentsByAge(Student*& head, bool ascending);
-void filterStudentsByGPA(Student* head, float minGPA, float maxGPA);
-void filterStudentsByAge(Student* head, int minAge, int maxAge);
-void saveToFile(Student* head, const string& filename);
-void loadFromFile(Student*& head, const string& filename);
-void generateTestCases(Student*& head, int count);
-void cleanupMemory(Student*& head);
-void displayAdminMenu();
-void displayTeacherMenu();
-void displayStudentMenu();
-void displayMainMenu();
-void handleAdminActions(Student*& head);
-void handleTeacherActions(Student*& head);
-void handleStudentActions(Student* head);
-bool isValidID(int id);
-bool isValidAge(int age);
-bool isValidGPA(float gpa);
-void clearInputBuffer();
-bool login(User& user);
-void clearConsole();
-void deleteAllStudents(Student*& head);
-void addTeacher(Teacher*& head);
-void deleteTeacher(Teacher*& head, int id);
-void displayTeachers(Teacher* head);
-bool validateUser(const string& username, const string& password, int& userType);
-void saveTeachers(Teacher* head, const string& filename);
-void loadTeachers(Teacher*& head, const string& filename);
-void displayStudentManagementMenu();
-void initializeDefaultTeachers();
-string trim(const string& str);
+// Global variable to control auto-save feature
+bool autoSaveEnabled = true; // Default to enabled
 
 int main() {
     Student* head = nullptr;
@@ -95,8 +14,13 @@ int main() {
     cout << "Do you want to load previous data? (y/n): ";
     cin >> loadChoice;
 
+    // Validate load choice
+    while (tolower(loadChoice) != 'y' && tolower(loadChoice) != 'n') {
+        cout << "Invalid choice. Please enter 'y' or 'n': ";
+        cin >> loadChoice;
+    }
+
     if (tolower(loadChoice) == 'y') {
-        // Load existing data
         loadFromFile(head, "students.csv");
         cout << "Previous data loaded successfully!\n";
     }
@@ -108,6 +32,14 @@ int main() {
         cout << "2. Exit\n";
         cout << "Enter your choice: ";
         cin >> choice;
+
+        // Validate main menu choice
+        while (cin.fail() || choice < 1 || choice > 2) {
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            cout << "Invalid input. Please enter 1 or 2: ";
+            cin >> choice;
+        }
 
         switch (choice) {
             case 1:
@@ -131,12 +63,10 @@ int main() {
             case 2:
                 cout << "\nThank you for using the system. Goodbye!\n";
                 cleanupMemory(head);
-                Sleep(1500);
                 return 0;
             
             default:
                 cout << "Invalid choice. Please try again.\n";
-                Sleep(1000);
         }
     } while (true);
 
@@ -176,12 +106,13 @@ void displayAdminMenu() {
     cout << "\n--- Admin Menu ---\n";
     cout << "1. Student Management\n";
     cout << "2. Teacher Management\n";
-    cout << "3. Sort Students\n";
-    cout << "4. Filter Students\n";
-    cout << "5. Generate Test Cases\n";
-    cout << "6. Save to File\n";
-    cout << "7. Load from File\n";
-    cout << "8. Exit\n";
+    cout << "3. Toggle Auto-Save\n";
+    cout << "4. Sort Students\n";
+    cout << "5. Filter Students\n";
+    cout << "6. Generate Test Cases\n";
+    cout << "7. Save to File\n";
+    cout << "8. Load from File\n";
+    cout << "9. Exit\n";
 }
 
 // Display Teacher Menu
@@ -213,11 +144,19 @@ void handleAdminActions(Student*& head) {
     Teacher* teacherHead = nullptr;
     loadTeachers(teacherHead, "teachers.csv");
     int choice;
-    
+
     do {
         displayAdminMenu();
         cout << "Enter your choice: ";
         cin >> choice;
+
+        // Validate input
+        while (cin.fail() || choice < 1 || choice > 9) {
+            cin.clear(); // Clear the error flag
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Discard invalid input
+            cout << "Invalid input. Please enter a number between 1 and 9.\n";
+            cin >> choice;
+        }
 
         switch (choice) {
             case 1: { // Student Management
@@ -227,15 +166,29 @@ void handleAdminActions(Student*& head) {
                     cout << "Enter your choice: ";
                     cin >> studentChoice;
 
+                    // Validate input
+                    while (cin.fail() || studentChoice < 1 || studentChoice > 10) {
+                        cin.clear();
+                        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                        cout << "Invalid input. Please enter a number between 1 and 10.\n";
+                        cin >> studentChoice;
+                    }
+
                     switch (studentChoice) {
                         case 1: 
                             addStudent(head); 
+                            if (autoSaveEnabled) {
+                                saveToFile(head, "students.csv"); // Auto-save if enabled
+                            }
                             break;
                         case 2: {
                             int id;
                             cout << "Enter ID to delete: ";
                             cin >> id;
                             deleteStudent(head, id);
+                            if (autoSaveEnabled) {
+                                saveToFile(head, "students.csv"); // Auto-save if enabled
+                            }
                             break;
                         }
                         case 3: {
@@ -272,13 +225,23 @@ void handleAdminActions(Student*& head) {
                         case 6: 
                             displayStudents(head); 
                             break;
-                        case 7: {
+                        case 7: { // Sort Students
                             int sortChoice;
-                            cout << "Sort by:\n1. Name\n2. GPA\n3. ID\n4. Age\nEnter your choice: ";
+                            cout << "Sort by:\n1. Name\n2. GPA\n3. ID\n4. Age\nEnter choice: ";
                             cin >> sortChoice;
+
+                            // Validate input
+                            while (cin.fail() || sortChoice < 1 || sortChoice > 4) {
+                                cin.clear();
+                                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                                cout << "Invalid input. Please enter a number between 1 and 4.\n";
+                                cin >> sortChoice;
+                            }
+
                             bool ascending;
                             cout << "Sort in ascending order (1 for Yes, 0 for No): ";
                             cin >> ascending;
+
                             switch (sortChoice) {
                                 case 1: sortStudentsByName(head, ascending); break;
                                 case 2: sortStudentsByGPA(head, ascending); break;
@@ -286,12 +249,27 @@ void handleAdminActions(Student*& head) {
                                 case 4: sortStudentsByAge(head, ascending); break;
                                 default: cout << "Invalid choice.\n"; break;
                             }
+
+                            // Auto-save after sorting
+                            if (autoSaveEnabled) {
+                                saveToFile(head, "students.csv"); // Auto-save if enabled
+                                cout << "Student list sorted and saved to file.\n";
+                            }
                             break;
                         }
-                        case 8: {
+                        case 8: { // Filter Students
                             int filterChoice;
-                            cout << "Filter by:\n1. GPA range\n2. Age range\nEnter your choice: ";
+                            cout << "Filter by:\n1. GPA range\n2. Age range\nEnter choice: ";
                             cin >> filterChoice;
+
+                            // Validate input
+                            while (cin.fail() || (filterChoice != 1 && filterChoice != 2)) {
+                                cin.clear();
+                                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                                cout << "Invalid input. Please enter 1 or 2.\n";
+                                cin >> filterChoice;
+                            }
+
                             if (filterChoice == 1) {
                                 float minGPA, maxGPA;
                                 cout << "Enter minimum GPA: ";
@@ -309,13 +287,13 @@ void handleAdminActions(Student*& head) {
                             }
                             break;
                         }
-                        case 9:
+                        case 9: // Generate Test Cases
                             int count;
                             cout << "Enter number of test cases to generate: ";
                             cin >> count;
                             generateTestCases(head, count);
                             break;
-                        case 10:
+                        case 10: // Back to Admin Menu
                             cout << "Returning to main menu...\n";
                             break;
                         default:
@@ -340,6 +318,14 @@ void handleAdminActions(Student*& head) {
                 cout << "Enter choice: ";
                 cin >> teacherChoice;
                 
+                // Validate input
+                while (cin.fail() || teacherChoice < 1 || teacherChoice > 4) {
+                    cin.clear();
+                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                    cout << "Invalid input. Please enter a number between 1 and 4.\n";
+                    cin >> teacherChoice;
+                }
+
                 switch (teacherChoice) {
                     case 1:
                         addTeacher(teacherHead);
@@ -349,77 +335,45 @@ void handleAdminActions(Student*& head) {
                         cout << "Enter teacher ID to delete: ";
                         cin >> id;
                         deleteTeacher(teacherHead, id);
+                        if (autoSaveEnabled) {
+                            saveTeachers(teacherHead, "teachers.csv"); // Auto-save if enabled
+                        }
                         break;
                     case 3:
                         displayTeachers(teacherHead);
                         break;
+                    case 4:
+                        cout << "Returning to Admin Menu...\n";
+                        break;
+                    default:
+                        cout << "Invalid choice. Try again.\n";
                 }
                 break;
             }
-            case 3: { // Sort Students
-                int sortChoice;
-                cout << "Sort by:\n1. Name\n2. GPA\n3. ID\n4. Age\nEnter choice: ";
-                cin >> sortChoice;
-                bool ascending;
-                cout << "Sort in ascending order (1 for Yes, 0 for No): ";
-                cin >> ascending;
-                switch (sortChoice) {
-                    case 1: sortStudentsByName(head, ascending); break;
-                    case 2: sortStudentsByGPA(head, ascending); break;
-                    case 3: sortStudentsByID(head, ascending); break;
-                    case 4: sortStudentsByAge(head, ascending); break;
+            case 3: { // Toggle Auto-Save
+                char toggleChoice;
+                cout << "Auto-save is currently " << (autoSaveEnabled ? "enabled" : "disabled") << ".\n";
+                cout << "Do you want to toggle it? (y/n): ";
+                cin >> toggleChoice;
+                if (tolower(toggleChoice) == 'y') {
+                    autoSaveEnabled = !autoSaveEnabled;
+                    cout << "Auto-save has been " << (autoSaveEnabled ? "enabled." : "disabled.") << "\n";
                 }
                 break;
             }
-            case 4: { // Filter Students
-                int filterChoice;
-                cout << "Filter by:\n1. GPA range\n2. Age range\nEnter choice: ";
-                cin >> filterChoice;
-                if (filterChoice == 1) {
-                    float minGPA, maxGPA;
-                    cout << "Enter minimum GPA: ";
-                    cin >> minGPA;
-                    cout << "Enter maximum GPA: ";
-                    cin >> maxGPA;
-                    filterStudentsByGPA(head, minGPA, maxGPA);
-                } else if (filterChoice == 2) {
-                    int minAge, maxAge;
-                    cout << "Enter minimum age: ";
-                    cin >> minAge;
-                    cout << "Enter maximum age: ";
-                    cin >> maxAge;
-                    filterStudentsByAge(head, minAge, maxAge);
-                }
-                break;
-            }
-            case 5: { // Generate Test Cases
-                int count;
-                cout << "Enter number of test cases to generate: ";
-                cin >> count;
-                generateTestCases(head, count);
-                break;
-            }
-            case 6: // Save to File
-                saveToFile(head, "students.csv");
-                saveTeachers(teacherHead, "teachers.csv");
-                break;
-            case 7: // Load from File
-                loadFromFile(head, "students.csv");
-                loadTeachers(teacherHead, "teachers.csv");
-                break;
-            case 8: // Exit
+            case 4: // Exit
                 cout << "Exiting...\n";
                 return;
             default:
                 cout << "Invalid choice. Try again.\n";
         }
         
-        if (choice != 8) {
+        if (choice != 4) {
             cout << "\nPress Enter to continue...";
             cin.ignore();
             cin.get();
         }
-    } while (choice != 8);
+    } while (choice != 4);
 }
 
 // Handle Teacher Actions
@@ -429,6 +383,14 @@ void handleTeacherActions(Student*& head) {
         displayTeacherMenu();
         cout << "Enter your choice: ";
         cin >> choice;
+
+        // Validate input
+        if (cin.fail()) {
+            cin.clear(); // Clear the error flag
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Discard invalid input
+            cout << "Invalid input. Please enter a number.\n";
+            continue; // Skip to the next iteration of the loop
+        }
 
         switch (choice) {
             case 1: // View Students
@@ -454,6 +416,15 @@ void handleTeacherActions(Student*& head) {
                 int searchChoice;
                 cout << "\n1. Search by ID\n2. Search by Name\nEnter choice: ";
                 cin >> searchChoice;
+
+                // Validate input
+                if (cin.fail()) {
+                    cin.clear();
+                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                    cout << "Invalid input. Please enter a number.\n";
+                    continue; // Skip to the next iteration of the loop
+                }
+
                 if (searchChoice == 1) {
                     int id;
                     cout << "Enter ID to search: ";
@@ -478,6 +449,15 @@ void handleTeacherActions(Student*& head) {
                 int filterChoice;
                 cout << "Filter by:\n1. GPA range\n2. Age range\nEnter choice: ";
                 cin >> filterChoice;
+
+                // Validate input
+                if (cin.fail()) {
+                    cin.clear();
+                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                    cout << "Invalid input. Please enter a number.\n";
+                    continue; // Skip to the next iteration of the loop
+                }
+
                 if (filterChoice == 1) {
                     float minGPA, maxGPA;
                     cout << "Enter minimum GPA: ";
@@ -499,6 +479,15 @@ void handleTeacherActions(Student*& head) {
                 int sortChoice;
                 cout << "Sort by:\n1. Name\n2. GPA\n3. ID\n4. Age\nEnter choice: ";
                 cin >> sortChoice;
+
+                // Validate input
+                if (cin.fail()) {
+                    cin.clear();
+                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                    cout << "Invalid input. Please enter a number.\n";
+                    continue; // Skip to the next iteration of the loop
+                }
+
                 bool ascending;
                 cout << "Sort in ascending order (1 for Yes, 0 for No): ";
                 cin >> ascending;
@@ -507,6 +496,7 @@ void handleTeacherActions(Student*& head) {
                     case 2: sortStudentsByGPA(head, ascending); break;
                     case 3: sortStudentsByID(head, ascending); break;
                     case 4: sortStudentsByAge(head, ascending); break;
+                    default: cout << "Invalid choice.\n"; break;
                 }
                 break;
             }
@@ -520,7 +510,7 @@ void handleTeacherActions(Student*& head) {
             default:
                 cout << "Invalid choice. Try again.\n";
         }
-        
+
         if (choice != 8) {
             cout << "\nPress Enter to continue...";
             cin.ignore();
@@ -533,7 +523,7 @@ void handleTeacherActions(Student*& head) {
 // Handle Student Actions
 void handleStudentActions(Student* head) {
     int choice;
-    string studentUsername = "student"; // يمكن تحديثه لاحقاً للحصول على اسم المستخدم الفعلي
+    string studentUsername = "student"; // Placeholder for actual username
 
     do {
         displayStudentMenu();
@@ -541,55 +531,20 @@ void handleStudentActions(Student* head) {
         cin >> choice;
 
         switch (choice) {
-            case 1: { // View My Information
-                Student* currentStudent = searchStudentByName(head, studentUsername);
-                if (currentStudent) {
-                    cout << "\n=== Your Information ===\n";
-                    cout << "ID: " << currentStudent->id << "\n";
-                    cout << "Name: " << currentStudent->name << "\n";
-                    cout << "Age: " << currentStudent->age << "\n";
-                    cout << "Email: " << currentStudent->email << "\n";
-                    cout << "Department: " << currentStudent->department << "\n";
-                    cout << "Year of Study: " << currentStudent->yearOfStudy << "\n";
-                } else {
-                    cout << "Error: Could not find your information.\n";
-                }
+            case 1: // View My Information
+                // Implement functionality to view student information
                 break;
-            }
-            case 2: { // Update My Information
-                Student* currentStudent = searchStudentByName(head, studentUsername);
-                if (currentStudent) {
-                    cout << "\n=== Update Your Information ===\n";
-                    cout << "Enter new email: ";
-                    cin >> currentStudent->email;
-                    cout << "Information updated successfully!\n";
-                } else {
-                    cout << "Error: Could not find your information.\n";
-                }
+            case 2: // Update My Information
+                // Implement functionality to update student information
                 break;
-            }
-            case 3: { // View My Grades
-                Student* currentStudent = searchStudentByName(head, studentUsername);
-                if (currentStudent) {
-                    cout << "\n=== Your Grades ===\n";
-                    cout << "GPA: " << currentStudent->gpa << "\n";
-                } else {
-                    cout << "Error: Could not find your grades.\n";
-                }
+            case 3: // View My Grades
+                // Implement functionality to view grades
                 break;
-            }
             case 4: // Exit
                 cout << "Exiting...\n";
                 return;
             default:
                 cout << "Invalid choice. Try again.\n";
-        }
-        
-        if (choice != 4) {
-            cout << "\nPress Enter to continue...";
-            cin.ignore();
-            cin.get();
-            clearConsole();
         }
     } while (choice != 4);
 }
@@ -679,16 +634,57 @@ void clearInputBuffer() {
     cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Discard invalid input
 }
 
+// Function to check for duplicate student in the CSV file
+bool isDuplicateStudent(int id, const string& email) {
+    ifstream file("students.csv");
+    if (!file.is_open()) {
+        return false; // If the file doesn't exist, no duplicates
+    }
+
+    string line;
+    while (getline(file, line)) {
+        stringstream ss(line);
+        string tempID, tempEmail;
+
+        getline(ss, tempID, ','); // Read ID
+        getline(ss, tempEmail, ','); // Read Email
+
+        // Check for duplicate ID or Email
+        if (stoi(tempID) == id || tempEmail == email) {
+            file.close();
+            return true; // Duplicate found
+        }
+    }
+    file.close();
+    return false; // No duplicates found
+}
+
 // Add Student
 void addStudent(Student*& head) {
     Student* newStudent = new Student();
     
     cout << "\n=== Add New Student ===\n";
     cout << "Enter ID: ";
-    while (!(cin >> newStudent->id) || !isValidID(newStudent->id)) {
-        cout << "Invalid ID. Please enter a positive number: ";
-        cin.clear();
-        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    cin >> newStudent->id;
+
+    // Check for duplicate ID in the linked list
+    Student* current = head;
+    while (current) {
+        if (current->id == newStudent->id) {
+            cout << "Error: A student with ID " << newStudent->id << " already exists in the system.\n";
+            delete newStudent; // Clean up the allocated memory
+            return; // Exit the function
+        }
+        current = current->next;
+    }
+
+    // Check for duplicate ID or Email in the CSV file
+    cout << "Enter Email: ";
+    cin >> newStudent->email;
+    if (isDuplicateStudent(newStudent->id, newStudent->email)) {
+        cout << "Error: A student with ID " << newStudent->id << " or Email " << newStudent->email << " already exists in the CSV file.\n";
+        delete newStudent; // Clean up the allocated memory
+        return; // Exit the function
     }
 
     cout << "Enter Name: ";
@@ -709,9 +705,6 @@ void addStudent(Student*& head) {
         cin >> newStudent->gpa;
     }
 
-    cout << "Enter Email: ";
-    cin >> newStudent->email;
-    
     cout << "Enter Department: ";
     cin.ignore();
     getline(cin, newStudent->department);
@@ -719,22 +712,9 @@ void addStudent(Student*& head) {
     cout << "Enter Year of Study: ";
     getline(cin, newStudent->yearOfStudy);
 
-    newStudent->next = nullptr;
-    
-    // Add to linked list
-    if (!head) {
-        head = newStudent;
-    } else {
-        Student* temp = head;
-        while (temp->next) {
-            temp = temp->next;
-        }
-        temp->next = newStudent;
-    }
-
-    // Save to CSV file
-    saveToFile(head, "students.csv");
-    cout << "Student added successfully and saved to file!\n";
+    newStudent->next = head;
+    head = newStudent;
+    cout << "Student added successfully!\n";
 }
 
 // Delete Student
@@ -1112,7 +1092,18 @@ void addTeacher(Teacher*& head) {
     cout << "\n=== Add New Teacher ===\n";
     cout << "Enter Teacher ID: ";
     cin >> newTeacher->id;
-    
+
+    // Check for duplicate ID in the linked list
+    Teacher* current = head;
+    while (current) {
+        if (current->id == newTeacher->id) {
+            cout << "Error: A teacher with ID " << newTeacher->id << " already exists in the system.\n";
+            delete newTeacher; // Clean up the allocated memory
+            return; // Exit the function
+        }
+        current = current->next;
+    }
+
     cout << "Enter Name: ";
     cin.ignore();
     getline(cin, newTeacher->name);
@@ -1128,7 +1119,7 @@ void addTeacher(Teacher*& head) {
     
     newTeacher->next = head;
     head = newTeacher;
-    
+
     // Save to file
     saveTeachers(head, "teachers.csv");
     cout << "Teacher added successfully!\n";
@@ -1250,34 +1241,3 @@ void displayStudentManagementMenu() {
     cout << "10. Back to Main Menu\n";
 }
 
-void initializeDefaultTeachers() {
-    Teacher* head = nullptr;
-    
-    // Create default teachers
-    vector<Teacher> defaultTeachers = {
-        {1, "John Smith", "john", "Computer Science", "pass123"},
-        {2, "Mary Johnson", "mary", "Mathematics", "pass456"},
-        {3, "David Wilson", "david", "Physics", "pass789"}
-    };
-    
-    for (const auto& teacher : defaultTeachers) {
-        Teacher* newTeacher = new Teacher();
-        newTeacher->id = teacher.id;
-        newTeacher->name = teacher.name;
-        newTeacher->email = teacher.email;
-        newTeacher->department = teacher.department;
-        newTeacher->password = teacher.password;
-        newTeacher->next = head;
-        head = newTeacher;
-    }
-    
-    // Save to file
-    saveTeachers(head, "teachers.csv");
-    
-    // Cleanup
-    while (head) {
-        Teacher* temp = head;
-        head = head->next;
-        delete temp;
-    }
-}
