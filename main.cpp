@@ -24,6 +24,7 @@ int main() {
 
     if (tolower(loadChoice) == 'y') {
         loadFromFile(head, "students.csv");
+        loadCoursesForStudents(head, "course_enrollments.csv");
         loadTeachers(teacherHead, "teachers.csv");
         cout << "Previous data loaded successfully!\n";
     }
@@ -233,44 +234,7 @@ void handleAdminActions(Student*& head) {
                             displayStudents(head); 
                             break;
                         case 7: { // Sort Students
-                            int sortChoice;
-                            cout << "Sort by:\n1. Name\n2. GPA\n3. ID\n4. Age\nEnter choice: ";
-                            cin >> sortChoice;
-
-                            // Validate input
-                            while (cin.fail() || sortChoice < 1 || sortChoice > 4) {
-                                cin.clear();
-                                cin.ignore(numeric_limits<streamsize>::max(), '\n');
-                                cout << "Invalid input. Please enter a number between 1 and 4.\n";
-                                cin >> sortChoice;
-                            }
-
-                            bool ascending;
-                            cout << "Sort in ascending order (1 for Yes, 0 for No): ";
-                            cin >> ascending;
-
-                            switch (sortChoice) {
-                                case 1: 
-                                    sortStudentsByName(head, ascending); 
-                                    break;
-                                case 2: 
-                                    sortStudentsByGPA(head, ascending); 
-                                    break;
-                                case 3: 
-                                    sortStudentsByID(head, ascending); 
-                                    break;
-                                case 4: 
-                                    sortStudentsByAge(head, ascending); 
-                                    break;
-                                default: 
-                                    cout << "Invalid choice.\n"; 
-                                    break;
-                            }
-
-                            if (autoSaveEnabled) {
-                                saveToFile(head, "students.csv", true); // Auto-save if enabled
-                                cout << "Student list sorted and saved to file.\n";
-                            }
+                            sortStudents(head);
                             break;
                         }
                         case 8: { // Filter Students
@@ -370,9 +334,9 @@ void handleAdminActions(Student*& head) {
                 break;
             }
             case 3: { // Toggle Auto-Save
-                char toggleChoice;
                 cout << "Auto-save is currently " << (autoSaveEnabled ? "enabled" : "disabled") << ".\n";
                 cout << "Do you want to toggle it? (y/n): ";
+                char toggleChoice;
                 cin >> toggleChoice;
                 if (tolower(toggleChoice) == 'y') {
                     autoSaveEnabled = !autoSaveEnabled;
@@ -422,6 +386,7 @@ void handleAdminActions(Student*& head) {
                 break;
             case 8: // load from file
                 loadFromFile(head, "students.csv");
+                loadTeachers(teacherHead,"teachers.csv");
                 break;
             case 9: // exit
                 cout << "Exiting...\n";
@@ -1010,7 +975,7 @@ void deleteStudent(Student*& head, int id) {
 
     if (found) {
         // Update CSV file after deletion
-        saveToFile(head, "students.csv", true);
+        saveToFile(head, "students.csv", true); // Pass true to include password if needed
         cout << "Student deleted successfully and file updated.\n";
     } else {
         cout << "Student not found.\n";
@@ -1482,15 +1447,54 @@ void addTeacher(Teacher*& head) {
     cout << "Enter Department: ";
     getline(cin, newTeacher->department);
     
-    cout << "Set Password: ";
-    getline(cin, newTeacher->password);
-    
+    string password, confirmPassword;
+    do {
+        cout << "Set Password: ";
+        password = "";
+        char ch;
+        while ((ch = _getch()) != '\r') {
+            if (ch == '\b') {
+                if (password.length() > 0) {
+                    password.pop_back();
+                    cout << "\b \b";
+                }
+            } else {
+                password += ch;
+                cout << '*';
+            }
+        }
+        cout << endl;
+
+        cout << "Confirm Password: ";
+        confirmPassword = "";
+        while ((ch = _getch()) != '\r') {
+            if (ch == '\b') {
+                if (confirmPassword.length() > 0) {
+                    confirmPassword.pop_back();
+                    cout << "\b \b";
+                }
+            } else {
+                confirmPassword += ch;
+                cout << '*';
+            }
+        }
+        cout << endl;
+
+        if (password != confirmPassword) {
+            cout << "Passwords do not match! Please try again.\n";
+        }
+    } while (password != confirmPassword);
+
+    newTeacher->password = password;
+
     newTeacher->next = head;
     head = newTeacher;
-
-    // Save to file
-    saveTeachers(head, "teachers.csv");
     cout << "Teacher added successfully!\n";
+
+    if (autoSaveEnabled) {
+        saveTeachers(head, "teachers.csv"); // Use saveTeachers instead of saveToFile
+        cout << "Data saved to teachers.csv successfully.\n";
+    }
 }
 
 void deleteTeacher(Teacher*& head, int id) {
@@ -1629,7 +1633,46 @@ void addCourseWithDegree(Student* student) {
     
     student->courses.push_back(newCourse);
     cout << "Course and degree added successfully!\n";
+    
+    // Save the course enrollment to a new CSV file
+    ofstream file("course_enrollments.csv", ios::app);
+    if (file.is_open()) {
+        file << student->id << "," << newCourse.name << "," << newCourse.degree << "\n";
+        file.close();
+        cout << "Course enrollment saved to CSV file successfully.\n";
+    } else {
+        cout << "Error opening file to save course enrollment.\n";
+    }
 }
+void loadCoursesForStudents(Student* head, const string& filename) {
+    ifstream file(filename);
+    if (!file) {
+        cout << "Error opening file.\n";
+        return;
+    }
+    string line;
+    while (getline(file, line)) {
+        stringstream ss(line);
+        string id, courseName, degree;
+        getline(ss, id, ',');
+        getline(ss, courseName, ',');
+        getline(ss, degree, ',');
+        Student* current = head;
+        while (current) {
+            if (current->id == stoi(id)) {
+                Course newCourse;
+                newCourse.name = courseName;
+                newCourse.degree = stof(degree);
+                current->courses.push_back(newCourse);
+                break;
+            }
+            current = current->next;
+        }
+    }
+    file.close();
+    cout << "Courses loaded from " << filename << " successfully.\n";
+}
+
 
 void displayCoursesAndDegrees(Student* student) {
     if (student->courses.empty()) {
