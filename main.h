@@ -61,7 +61,6 @@ struct Teacher {
 
 // Function Prototypes
 void addStudent(Student*& head);
-void deleteStudent(Student*& head, int id);
 Student* searchStudentByID(Student* head, int id);
 Student* searchStudentByName(Student* head, const string& name);
 void updateStudent(Student* student);
@@ -108,5 +107,6 @@ void loadCourses(Student*& head, const string& filename);
 void displayCourseManagementMenu();
 void manageCourseAndDegrees(Student*& head);
 float calculateGPA(const vector<Course>& courses);
-
+void loadCoursesForStudents(Student* head, const string& filename);
+void deleteStudent(Student*& head, int id);
 #endif
