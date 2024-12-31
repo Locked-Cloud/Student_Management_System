@@ -1,11 +1,8 @@
 #include "main.h"
-#include <iomanip> // Include for setprecision and setw
 
-// Global variable to control auto-save feature
+
 bool autoSaveEnabled = true; // Default to enabled
 
-// Remove the static declaration if not needed
-// User User::currentUser;  // Define static variable if needed
 
 int main() {
     Student* head = nullptr;
