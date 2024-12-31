@@ -20,21 +20,32 @@
 
 using namespace std;
 
+
+struct Course {
+    string name;
+    float degree; // Assuming degree is a float
+};
+
+
 struct Student {
     int id;
     string name;
     int age;
     float gpa;
     string email;
+    string password;
     string department;
     string yearOfStudy;
+    vector<Course> courses;
     Student* next;
+    
 };
 
 struct User {
     string username;
     string password;
     int userType; // 1 for Admin, 2 for Teacher, 3 for Student
+
 };
 
 struct Teacher {
@@ -44,6 +55,7 @@ struct Teacher {
     string department;
     string password;
     Teacher* next;
+
 };
 
 // Function Prototypes
@@ -59,7 +71,7 @@ void sortStudentsByID(Student*& head, bool ascending);
 void sortStudentsByAge(Student*& head, bool ascending);
 void filterStudentsByGPA(Student* head, float minGPA, float maxGPA);
 void filterStudentsByAge(Student* head, int minAge, int maxAge);
-void saveToFile(Student* head, const string& filename);
+void saveToFile(Student* head, const string& filename, bool includePassword);
 void loadFromFile(Student*& head, const string& filename);
 void generateTestCases(Student*& head, int count);
 void cleanupMemory(Student*& head);
@@ -69,7 +81,7 @@ void displayStudentMenu();
 void displayMainMenu();
 void handleAdminActions(Student*& head);
 void handleTeacherActions(Student*& head);
-void handleStudentActions(Student* head);
+void handleStudentActions(Student* head, User& currentUser);
 bool isValidID(int id);
 bool isValidAge(int age);
 bool isValidGPA(float gpa);
@@ -87,6 +99,13 @@ void displayStudentManagementMenu();
 void initializeDefaultTeachers();
 string trim(const string& str);
 void sortStudents(Student*& head) ;
-
+void addCourseWithDegree(Student* student);
+void displayCoursesAndDegrees(Student* student);
+void removeCourse(Student* student);
+void saveCourses(Student* head, const string& filename);
+void loadCourses(Student*& head, const string& filename);
+void displayCourseManagementMenu();
+void manageCourseAndDegrees(Student*& head);
+float calculateGPA(const vector<Course>& courses);
 
 #endif
