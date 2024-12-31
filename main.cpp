@@ -192,7 +192,7 @@ void sortStudents(Student*& head) {
     cout << "Students sorted successfully.\n";
 
     if (autoSaveEnabled) {
-        saveToFile(head, "students.csv");
+        saveToFile(head, "students.csv", false);
         cout << "Student list saved to file.\n";
     }
 }
@@ -236,7 +236,7 @@ void handleAdminActions(Student*& head) {
                         case 1: 
                             addStudent(head); 
                             if (autoSaveEnabled) {
-                                saveToFile(head, "students.csv"); // Auto-save if enabled
+                                saveToFile(head, "students.csv", false); // Auto-save if enabled
                             }
                             break;
                         case 2: {
@@ -245,7 +245,7 @@ void handleAdminActions(Student*& head) {
                             cin >> id;
                             deleteStudent(head, id);
                             if (autoSaveEnabled) {
-                                saveToFile(head, "students.csv"); // Auto-save if enabled
+                                saveToFile(head, "students.csv", false); // Auto-save if enabled
                             }
                             break;
                         }
@@ -319,7 +319,7 @@ void handleAdminActions(Student*& head) {
                             }
 
                             if (autoSaveEnabled) {
-                                saveToFile(head, "students.csv"); // Auto-save if enabled
+                                saveToFile(head, "students.csv", false); // Auto-save if enabled
                                 cout << "Student list sorted and saved to file.\n";
                             }
                             break;
@@ -466,7 +466,7 @@ void handleAdminActions(Student*& head) {
                 generateTestCases(head, count);
                 break;
             case 7: // save to file
-                saveToFile(head, "students.csv");
+                saveToFile(head, "students.csv", false);
                 break;
             case 8: // load from file
                 loadFromFile(head, "students.csv");
@@ -508,7 +508,9 @@ void handleTeacherActions(Student*& head) {
                 break;
             case 2: // Add Student
                 addStudent(head);
-                saveToFile(head, "students.csv");
+                if (autoSaveEnabled) {
+                    saveToFile(head, "students.csv", false); // Auto-save if enabled
+                }
                 break;
             case 3: { // Update Student
                 int id;
@@ -516,7 +518,9 @@ void handleTeacherActions(Student*& head) {
                 cin >> id;
                 if (Student* student = searchStudentByID(head, id)) {
                     updateStudent(student);
-                    saveToFile(head, "students.csv");
+                    if (autoSaveEnabled) {
+                        saveToFile(head, "students.csv", false); // Auto-save if enabled
+                    }
                 } else {
                     cout << "Student not found.\n";
                 }
@@ -590,7 +594,9 @@ void handleTeacherActions(Student*& head) {
                 break;
             }
             case 7: // Save Changes
-                saveToFile(head, "students.csv");
+                if (autoSaveEnabled) {
+                    saveToFile(head, "students.csv", false); // Auto-save if enabled
+                }
                 cout << "Changes saved successfully!\n";
                 break;
             case 8: // Exit
@@ -821,57 +827,65 @@ void addStudent(Student*& head) {
     Student* newStudent = new Student();
     
     cout << "\n=== Add New Student ===\n";
-    cout << "Enter ID: ";
+    cout << "Enter student ID: ";
     cin >> newStudent->id;
 
-    // Check for duplicate ID in the linked list
-    Student* current = head;
-    while (current) {
-        if (current->id == newStudent->id) {
-            cout << "Error: A student with ID " << newStudent->id << " already exists in the system.\n";
-            delete newStudent; // Clean up the allocated memory
-            return; // Exit the function
-        }
-        current = current->next;
+    // Check for duplicate ID
+    if (searchStudentByID(head, newStudent->id)) {
+        cout << "Error: A student with ID " << newStudent->id << " already exists.\n";
+        delete newStudent; // Clean up
+        return;
     }
 
-    // Check for duplicate ID or Email in the CSV file
-    cout << "Enter Email: ";
-    cin >> newStudent->email;
-    if (isDuplicateStudent(newStudent->id, newStudent->email)) {
-        cout << "Error: A student with ID " << newStudent->id << " or Email " << newStudent->email << " already exists in the CSV file.\n";
-        delete newStudent; // Clean up the allocated memory
-        return; // Exit the function
-    }
-
-    cout << "Enter Name: ";
+    cout << "Enter student name: ";
     cin.ignore();
     getline(cin, newStudent->name);
     
-    cout << "Enter Age: ";
+    cout << "Enter student age: ";
     cin >> newStudent->age;
     while (!isValidAge(newStudent->age)) {
         cout << "Invalid age. Please enter a valid age: ";
         cin >> newStudent->age;
     }
 
-    cout << "Enter GPA: ";
+    cout << "Enter student email: ";
+    cin >> newStudent->email;
+    
+    cout << "Enter student GPA: ";
     cin >> newStudent->gpa;
     while (!isValidGPA(newStudent->gpa)) {
         cout << "Invalid GPA. Please enter a valid GPA: ";
         cin >> newStudent->gpa;
     }
 
-    cout << "Enter Department: ";
+    cout << "Enter student department: ";
     cin.ignore();
     getline(cin, newStudent->department);
-    
-    cout << "Enter Year of Study: ";
+
+    cout << "Enter student year of study: ";
     getline(cin, newStudent->yearOfStudy);
 
-    newStudent->next = head;
+    // Adding password management with error handling
+    cout << "Enter password for the student: ";
+    cin >> newStudent->password; // Prompt for password
+
+    // Validate password (example: check length)
+    if (newStudent->password.length() < 6) {
+        cout << "Error: Password must be at least 6 characters long.\n";
+        delete newStudent; // Clean up
+        return;
+    }
+
+    newStudent->next = head; // Add to the front of the list
     head = newStudent;
+
     cout << "Student added successfully!\n";
+
+    // Save to file including the password
+    if (autoSaveEnabled) {
+        saveToFile(head, "students.csv", true); // Pass true to include password
+        cout << "Data saved to students.csv successfully.\n";
+    }
 }
 
 // Delete Student
@@ -901,7 +915,7 @@ void deleteStudent(Student*& head, int id) {
 
     if (found) {
         // Update CSV file after deletion
-        saveToFile(head, "students.csv");
+        saveToFile(head, "students.csv", false); // Pass false to exclude password
         cout << "Student deleted successfully and file updated.\n";
     } else {
         cout << "Student not found.\n";
@@ -1065,15 +1079,28 @@ void filterStudentsByAge(Student* head, int minAge, int maxAge) {
 }
 
 // Save to File
-void saveToFile(Student* head, const string& filename) {
+void saveToFile(Student* head, const string& filename, bool includePassword) {
     ofstream file(filename);
     if (!file) {
-        cout << "Error opening file.\n";
+        cout << "Error opening file for saving students.\n";
         return;
     }
+    
     while (head) {
-        file << head->id << "," << head->name << "," << head->age << ","
-             << head->gpa << "," << head->email << "," << head->department << "," << head->yearOfStudy << "\n";
+        file << head->id << "," 
+             << head->name << "," 
+             << head->age << "," 
+             << head->gpa << "," 
+             << head->department << "," 
+             << head->yearOfStudy
+             << "," << head->password
+             << "," << head->email;
+
+        if (includePassword) {
+            file << "," << head->password; // Include password if specified
+        }
+
+        file << "\n"; // New line for the next student
         head = head->next;
     }
     file.close();
@@ -1222,7 +1249,8 @@ bool validateUser(const string& username, const string& password, int& userType)
             getline(ss, id, ',');
             getline(ss, name, ',');
             getline(ss, email, ',');
-            
+            getline(ss, password, ',');
+
             email = trim(email);
             
             // For students, use email as both username and password
@@ -1399,4 +1427,150 @@ void displayStudentManagementMenu() {
     cout << "8. Filter Students\n";
     cout << "9. Generate Test Cases\n";
     cout << "10. Back to Main Menu\n";
+}
+
+void addCourseWithDegree(Student* student) {
+    Course newCourse;
+    cout << "Enter course name: ";
+    cin >> newCourse.name;
+    cout << "Enter course degree (0-100): ";
+    cin >> newCourse.degree;
+    student->courses.push_back(newCourse);
+    cout << "Course added successfully!\n";
+}
+
+void displayCoursesAndDegrees(Student* student) {
+    if (student->courses.empty()) {
+        cout << "No courses found.\n";
+        return;
+    }
+    cout << "\n=== Courses and Degrees ===\n";
+    for (size_t i = 0; i < student->courses.size(); ++i) {
+        cout << i + 1 << ". " << student->courses[i].name << " - " << student->courses[i].degree << "\n";
+    }
+}
+
+void removeCourse(Student* student) {
+    if (student->courses.empty()) {
+        cout << "No courses to remove.\n";
+        return;
+    }
+    displayCoursesAndDegrees(student);
+    cout << "Enter course number to remove: ";
+    int index;
+    cin >> index;
+    if (index > 0 && index <= static_cast<int>(student->courses.size())) {
+        student->courses.erase(student->courses.begin() + index - 1);
+        cout << "Course removed successfully.\n";
+    } else {
+        cout << "Invalid course number.\n";
+    }
+}
+
+void saveCourses(Student* head, const string& filename) {
+    ofstream file(filename);    
+    if (!file) {
+        cout << "Error opening file for saving courses.\n";
+        return;
+    }
+    for (Student* student = head; student; student = student->next) {
+        file << student->id << "," << student->name << ",";
+        for (const auto& course : student->courses) {
+            file << course.name << "," << course.degree << ";";
+        }
+        file << "\n";
+    }
+    file.close();
+}
+
+void loadCourses(Student*& head, const string& filename) {
+    ifstream file(filename);
+    if (!file) {
+        return; // Silent return if file doesn't exist
+    }
+    
+
+}
+
+// Manage Course and Degrees
+void manageCourseAndDegrees(Student*& head) {
+    int id;
+    cout << "Enter student ID: ";
+    cin >> id;
+    
+    Student* student = searchStudentByID(head, id);
+    if (!student) {
+        cout << "Student not found.\n";
+        return;
+    }
+
+    int choice;
+    do {
+        cout << "\n=== Course and Degree Management ===\n";
+        cout << "1. Add Course and Degree\n";
+        cout << "2. Update Course Degree\n";
+        cout << "3. Display Courses and Degrees\n";
+        cout << "4. Remove Course\n";
+        cout << "5. Back\n";
+        cout << "Enter choice: ";
+        cin >> choice;
+
+        switch (choice) {
+            case 1:
+                addCourseWithDegree(student);
+                break;
+            case 2: {
+                if (student->courses.empty()) {
+                    cout << "No courses found.\n";
+                    break;
+                }
+                displayCoursesAndDegrees(student);
+                cout << "Enter course number to update: ";
+                int index;
+                cin >> index;
+                
+                if (index > 0 && index <= static_cast<int>(student->courses.size())) {
+                    cout << "Enter new degree (0-100): ";
+                    float newDegree;
+                    cin >> newDegree;
+                    while (cin.fail() || newDegree < 0 || newDegree > 100) {
+                        cin.clear();
+                        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                        cout << "Invalid degree. Please enter a number between 0 and 100: ";
+                        cin >> newDegree;
+                    }
+                    student->courses[index-1].degree = newDegree;
+                    cout << "Degree updated successfully!\n";
+                } else {
+                    cout << "Invalid course number.\n";
+                }
+                break;
+            }
+            case 3:
+                displayCoursesAndDegrees(student);
+                break;
+            case 4: {
+                if (student->courses.empty()) {
+                    cout << "No courses to remove.\n";
+                    break;
+                }
+                displayCoursesAndDegrees(student);
+                cout << "Enter course number to remove: ";
+                int index;
+                cin >> index;
+                if (index > 0 && index <= static_cast<int>(student->courses.size())) {
+                    student->courses.erase(student->courses.begin() + index - 1);
+                    cout << "Course removed successfully.\n";
+                } else {
+                    cout << "Invalid course number.\n";
+                }
+                break;
+            }
+            case 5:
+                cout << "Returning to previous menu...\n";
+                break;
+            default:
+                cout << "Invalid choice.\n";
+        }
+    } while (choice != 5);
 }
